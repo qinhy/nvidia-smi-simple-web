@@ -3,18 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NVIDIA SMI Output</title>
+    <title>NVIDIA SMI Stream</title>
 </head>
 <body>
-    <pre id="nvidia-smi-output">Loading...</pre>
+    <h1>NVIDIA SMI Output Stream</h1>
+    <pre id="nvidia-smi-output"></pre>
     <script>
-        async function fetchNvidiaSmi() {
-            const response = await fetch('/nvidia-smi');
-            const data = await response.json();
-            document.getElementById('nvidia-smi-output').textContent = data.data || data.error;
+        const outputElement = document.getElementById('nvidia-smi-output');
+        let maxLines = 1;  // Maximum number of lines to display
+        let outputBuffer = [];
+    
+        function fetchData() {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", "/stream-nvidia-smi", true);
+            xhr.onprogress = function () {
+                let currentData = xhr.responseText;
+                outputBuffer = currentData.split('+-----------------------------------------------------------------------------+');
+                if (outputBuffer.length > maxLines) {
+                    outputBuffer = outputBuffer.slice(-maxLines);
+                }
+                outputElement.textContent = outputBuffer.join('\n');
+            };
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    outputElement.textContent += "\nStream ended.";
+                }
+            };
+            xhr.send();
         }
-        setInterval(fetchNvidiaSmi, 500);  // Update every 500ms
-        fetchNvidiaSmi();  // Initial fetch
+    
+        fetchData();
     </script>
+    
 </body>
 </html>
