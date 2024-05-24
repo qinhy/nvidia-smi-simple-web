@@ -20,23 +20,25 @@ def stream_nvidia_smi():
 
     def generate():
         buffer = ""
-        end_delimiter = "\+-+\+-+\+-+\+\n"
-        start_delimiter = "\+-+\+\n[^|]*"
+        start_delimiter = "\+-+\+\n"
+        end_delimiter = "\+-+\+-+\+-+\+\n\s+"
         collecting = False  # This flag indicates if we are between the start and end delimiters
 
         try:
             # Read each line from the subprocess' stdout
+            preline = ''
             for line in iter(process.stdout.readline, ''):
                 if re.match(start_delimiter, line):
                     collecting = True  # Start collecting lines
                     buffer = line  # Initialize buffer with the start delimiter line
                 elif collecting:
                     buffer += line
-                    if re.match(end_delimiter, line):
+                    if re.match(end_delimiter, preline+line):
                         collecting = False  # Stop collecting lines
                         # print(buffer)
                         yield f"data: {buffer.encode('utf-8')}\n\n"  # Send the complete block
                         buffer = ""  # Reset buffer for the next block
+                preline = line
         finally:
             process.stdout.close()
             process.wait()
