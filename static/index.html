@@ -10,30 +10,19 @@
     <pre id="nvidia-smi-output"></pre>
     <script>
         const outputElement = document.getElementById('nvidia-smi-output');
-        let maxLines = 1;  // Maximum number of lines to display
-        let outputBuffer = [];
-    
-        function fetchData() {
-            const xhr = new XMLHttpRequest();
-            xhr.open("GET", "/stream-nvidia-smi", true);
-            xhr.onprogress = function () {
-                let currentData = xhr.responseText;
-                outputBuffer = currentData.split('+-----------------------------------------------------------------------------+');
-                if (outputBuffer.length > maxLines) {
-                    outputBuffer = outputBuffer.slice(-maxLines);
-                }
-                outputElement.textContent = outputBuffer.join('\n');
-            };
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    outputElement.textContent += "\nStream ended.";
-                }
-            };
-            xhr.send();
-        }
-    
-        fetchData();
+        const eventSource = new EventSource('/stream-nvidia-smi');
+
+        eventSource.onmessage = function(event) {
+            // Append new data as it comes in
+            outputElement.textContent = event.data.split('\\n').slice(1,-1).join('\n');
+            // console.log(event.data.split('\\n').join('\n'));
+        };
+
+        eventSource.onerror = function(error) {
+            console.error("EventSource failed:", error);
+            outputElement.textContent += "Error: Connection with server lost.\n";
+            eventSource.close();
+        };
     </script>
-    
 </body>
 </html>

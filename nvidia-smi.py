@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-@app.get("/stream-nvidia-smi")
+@app.get("/stream-nvidia-smi", response_class=StreamingResponse)
 def stream_nvidia_smi():
     command = shlex.split("nvidia-smi -lms 500")
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
@@ -27,7 +27,6 @@ def stream_nvidia_smi():
         try:
             # Read each line from the subprocess' stdout
             for line in iter(process.stdout.readline, ''):
-                # print(buffer)
                 if re.match(start_delimiter, line):
                     collecting = True  # Start collecting lines
                     buffer = line  # Initialize buffer with the start delimiter line
@@ -36,13 +35,18 @@ def stream_nvidia_smi():
                     if re.match(end_delimiter, line):
                         collecting = False  # Stop collecting lines
                         # print(buffer)
-                        yield buffer.encode('utf-8')  # Send the complete block
+                        yield f"data: {buffer.encode('utf-8')}\n\n"  # Send the complete block
                         buffer = ""  # Reset buffer for the next block
         finally:
             process.stdout.close()
             process.wait()
 
-    return StreamingResponse(generate(), media_type="text/plain")
+    headers = {
+        'Cache-Control': 'no-cache',
+        'Content-Type': 'text/event-stream',
+        'Connection': 'keep-alive',
+    }
+    return StreamingResponse(generate(), headers=headers)
 
 # @app.get("/stream-nvidia-smi")
 # def stream_nvidia_smi():
