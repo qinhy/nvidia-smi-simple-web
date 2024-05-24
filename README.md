@@ -13,21 +13,30 @@
    Create a Python file for your FastAPI application. Here’s a simple example that executes `nvidia-smi` and returns the result:
 
    ```python
-   from fastapi import FastAPI
+   from fastapi import FastAPI, HTTPException
+   from fastapi.staticfiles import StaticFiles
    import subprocess
-
+   
    app = FastAPI()
-
+   
+   # Mount the static directory to serve index.html
+   app.mount("/static", StaticFiles(directory="static"), name="static")
+   
+   @app.get("/")
+   async def read_index():
+       return {"message": "Go to /static/index.html to see the NVIDIA SMI output"}
+   
    @app.get("/nvidia-smi")
    async def get_nvidia_smi():
        process = subprocess.Popen(
-           ["nvidia-smi", "-lms", "500"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+           ["nvidia-smi"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
        )
        stdout, stderr = process.communicate()
        if process.returncode == 0:
            return {"data": stdout.decode()}
        else:
            return {"error": stderr.decode()}
+
    ```
 
 ### Step 2: Creating the Frontend
