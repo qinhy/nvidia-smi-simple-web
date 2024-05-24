@@ -21,7 +21,7 @@ def stream_nvidia_smi():
     def generate():
         buffer = ""
         end_delimiter = "\+-+\+-+\+-+\+\n"
-        start_delimiter = "\+-+\+\n"
+        start_delimiter = "\+-+\+\n[^|]*"
         collecting = False  # This flag indicates if we are between the start and end delimiters
 
         try:
