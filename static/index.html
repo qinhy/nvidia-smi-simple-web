@@ -10,7 +10,7 @@
     <pre id="nvidia-smi-output"></pre>
     <script>
         const outputElement = document.getElementById('nvidia-smi-output');
-        const eventSource = new EventSource('/stream-nvidia-smi');
+        const eventSource = new EventSource('/stream-nvidia-smi-json');
 
         eventSource.onmessage = function(event) {
             // Append new data as it comes in
