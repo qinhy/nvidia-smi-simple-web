@@ -14,7 +14,8 @@
 
         eventSource.onmessage = function(event) {
             // Append new data as it comes in
-            outputElement.textContent = event.data.split('\\n').slice(1,-1).join('\n');
+            outputElement.textContent = event.data
+            // outputElement.textContent = event.data.split('\\n').slice(1,-1).join('\n');
             // console.log(event.data.split('\\n').join('\n'));
         };
 
