@@ -14,8 +14,8 @@
 
         eventSource.onmessage = function(event) {
             // Append new data as it comes in
-            console.log(event.data)
-            outputElement.textContent = JSON.parse(event.data);
+            // console.log(event.data)
+            outputElement.textContent = JSON.stringify(JSON.parse(event.data), undefined, 2);
             // outputElement.textContent = event.data.split('\\n').slice(1,-1).join('\n');
             // console.log(event.data.split('\\n').join('\n'));
         };
