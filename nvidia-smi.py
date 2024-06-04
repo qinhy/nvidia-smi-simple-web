@@ -78,7 +78,7 @@ def stream_nvidia_smi_json(nvidia_smi_path:str='nvidia-smi', no_units:bool=True)
         try:
             for line in iter(process.stdout.readline, ''):
                 if '[%]' in line:
-                    header = line.decode().split(',')
+                    header = line.split(',')
                     if preline != '':
                         yield f"data: {json.dumps(gpus).encode('utf-8')}\n\n"
                     preline = line
