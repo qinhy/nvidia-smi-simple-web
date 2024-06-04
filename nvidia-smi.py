@@ -85,7 +85,7 @@ def stream_nvidia_smi_json(nvidia_smi_path:str='nvidia-smi', no_units:bool=True)
                 gpu = {k:v for k,v in zip(header,line)}
                 # print(gpu)
                 gpus[gpu['uuid']]=gpu
-                yield f"data: {json.dumps(gpus).encode('utf-8')}\n\n"
+                yield f"data: {json.dumps(gpus)}\n\n"
         finally:
             process.stdout.close()
             process.wait()
