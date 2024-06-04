@@ -77,14 +77,18 @@ def stream_nvidia_smi_json(nvidia_smi_path:str='nvidia-smi', no_units:bool=True)
         gpus = {}
         try:
             for line in iter(process.stdout.readline, ''):
+                print(line)
                 if '[%]' in line:
                     header = line.split(',')
+                    print(header)
                     if preline != '':
                         yield f"data: {json.dumps(gpus).encode('utf-8')}\n\n"
                     preline = line
                     continue            
                 line = line.split(', ')
+                print(line)
                 gpu = {k:v for k,v in zip(header,line)}
+                print(gpu)
                 gpus[gpu['uuid']]=gpu
                 time.sleep(1)
         finally:
