@@ -69,28 +69,23 @@ DEFAULT_ATTRIBUTES = (
 def stream_nvidia_smi_json(nvidia_smi_path:str='nvidia-smi', no_units:bool=True):    
     keys=DEFAULT_ATTRIBUTES
     nu_opt = '' if not no_units else ',nounits'                
-    command = shlex.split('%s --query-gpu=%s --format=csv%s' % (nvidia_smi_path, ','.join(keys), nu_opt))
+    command = shlex.split('%s -lms 500 --query-gpu=%s --format=csv%s' % (nvidia_smi_path, ','.join(keys), nu_opt))
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
 
     def generate():        
-        preline = ''
         gpus = {}
         try:
             for line in iter(process.stdout.readline, ''):
                 # print(line)
                 if '[%]' in line:
                     header = [l.strip() for l in line.split(',')]
-                    # print(header)
-                    if preline != '':
-                        yield f"data: {json.dumps(gpus).encode('utf-8')}\n\n"
-                    preline = line
                     continue            
                 line = [l.strip() for l in line.split(', ')]
                 # print(line)
                 gpu = {k:v for k,v in zip(header,line)}
                 # print(gpu)
                 gpus[gpu['uuid']]=gpu
-                time.sleep(1)
+                yield f"data: {json.dumps(gpus).encode('utf-8')}\n\n"
         finally:
             process.stdout.close()
             process.wait()
