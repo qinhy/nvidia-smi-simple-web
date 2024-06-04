@@ -1,4 +1,6 @@
+import json
 import re
+import time
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 import subprocess
@@ -50,21 +52,49 @@ def stream_nvidia_smi():
     }
     return StreamingResponse(generate(), headers=headers)
 
-# @app.get("/stream-nvidia-smi")
-# def stream_nvidia_smi():
-#     # Prepare the command and split it correctly
-#     command = shlex.split("nvidia-smi -lms 500")
 
-#     # Start the subprocess with unbuffered output
-#     process = subprocess.Popen(
-#         command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
-#     )
+DEFAULT_ATTRIBUTES = (
+    'index',
+    'uuid',
+    'name',
+    'timestamp',
+    'memory.total',
+    'memory.free',
+    'memory.used',
+    'utilization.gpu',
+    'utilization.memory'
+)
 
-#     def generate():
-#         # Output each line from the subprocess' stdout
-#         for line in iter(process.stdout.readline, ''):
-#             yield line.encode('utf-8')
-#         process.stdout.close()
-#         process.wait()
+@app.get("/stream-nvidia-smi-json", response_class=StreamingResponse)
+def stream_nvidia_smi_json(nvidia_smi_path:str='nvidia-smi', no_units:bool=True):    
+    keys=DEFAULT_ATTRIBUTES
+    nu_opt = '' if not no_units else ',nounits'                
+    command = '%s --query-gpu=%s --format=csv%s' % (nvidia_smi_path, ','.join(keys), nu_opt)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
 
-#     return StreamingResponse(generate(), media_type="text/plain")
+    def generate():        
+        preline = ''
+        gpus = {}
+        try:
+            for line in iter(process.stdout.readline, ''):
+                if '[%]' in line:
+                    header = line.decode().split(',')
+                    if preline != '':
+                        yield f"data: {json.dumps(gpus).encode('utf-8')}\n\n"
+                    preline = line
+                    continue            
+                line = line.split(', ')
+                gpu = {k:v for k,v in zip(header,line)}
+                gpus[gpu['uuid']]=gpu
+                time.sleep(1)
+        finally:
+            process.stdout.close()
+            process.wait()
+
+    headers = {
+        'Cache-Control': 'no-cache',
+        'Content-Type': 'text/event-stream',
+        'Connection': 'keep-alive',
+    }
+    return StreamingResponse(generate(), headers=headers)
+
