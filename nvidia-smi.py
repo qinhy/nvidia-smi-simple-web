@@ -69,7 +69,7 @@ DEFAULT_ATTRIBUTES = (
 def stream_nvidia_smi_json(nvidia_smi_path:str='nvidia-smi', no_units:bool=True):    
     keys=DEFAULT_ATTRIBUTES
     nu_opt = '' if not no_units else ',nounits'                
-    command = '%s --query-gpu=%s --format=csv%s' % (nvidia_smi_path, ','.join(keys), nu_opt)
+    command = shlex.split('%s --query-gpu=%s --format=csv%s' % (nvidia_smi_path, ','.join(keys), nu_opt))
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
 
     def generate():        
